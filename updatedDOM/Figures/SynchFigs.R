@@ -67,7 +67,7 @@ borderThemeBox<-theme(panel.grid.major = element_blank(),panel.grid.minor = elem
                       text = element_text(size = 15),legend.background=element_blank(), 
                       axis.text.x=element_text(), aspect.ratio = 0.2)
 
-rmVars<-c("CHL", "SRP", "PC1", "PC2", "C1", "C2", "C3", "C4", "C5", "C6", "C7")
+rmVars<-c("CHL", "SRP", "PC1", "PC2", "C1", "C2", "C3", "C4", "C5", "C6", "C7", "E280")
 for(i in 1:length(rmVars)){
   data<-data[which(data$var!=rmVars[i]), ]
 }
@@ -89,7 +89,7 @@ Lim<-ggplot(data = Limno, aes(x=var_f, y=S, group=LUgroup_f))+
   scale_colour_manual("Land use", values=cols, labels=c("All sites", "Agriculturally dominated", "Mixed", "Wetland dominated"))+
   scale_y_continuous(limits=c(0,1), breaks=seq(0,1, 0.25))+
   scale_x_discrete("Variable")+
-  annotate("text", x=0.7, y=0.96, label= "A.", size=6)+
+  annotate("text", x=0.7, y=0.96, label= "B.", size=6)+
   borderTheme0.5
 Lim
 ggsave(filename = "Figures/SynchronyLimnoVars.png", plot=Lim, width = 6, height = 3, units= "in", device='png', dpi=320)
@@ -99,21 +99,21 @@ Phys<-ggplot(data = Physical, aes(x=var, y=S, group=LUgroup_f))+
   scale_colour_manual("Land use",values=cols, labels=c("All sites", "Agriculturally dominated", "Mixed", "Wetland dominated"))+
   scale_y_continuous(limits=c(0,1), breaks=seq(0,1, 0.25))+
   scale_x_discrete("Variable", labels=c("Temp"))+
-  annotate("text", x=0.6, y=0.96, label= "B.", size=6)+
+  annotate("text", x=0.6, y=0.96, label= "A.", size=6)+
   borderTheme1.5
 Phys  
-ggsave(filename = "Figures/SynchronyPhysVars.png", plot=Phys, width = 6, height = 3, units= "in", device='png', dpi=320)
+ggsave(filename = "Figures/SynchronyPhysVars.png", plot=Phys, width = 4, height = 3, units= "in", device='png', dpi=320)
 
-DOM$var_f<-factor(DOM$var, levels=c("Cth", "Cmh", "Cmp", "Cf", "A350", "BA", "E280", "HIX", "SR", "SUVA254", "FI"))
+DOM$var_f<-factor(DOM$var, levels=c("Cth", "Cmh", "Cmp", "Cf", "A350", "BA", "HIX", "SR", "SUVA254", "FI"))
 pDOM<-ggplot(data = DOM, aes(x=var_f, y=S, group=LUgroup_f))+
   geom_jitter(size=3, alpha=1, aes(color = LUgroup_f), width=0.2)+
   scale_colour_manual("Land use",values=cols, labels=c("All sites", "Agriculturally dominated", "Mixed", "Wetland dominated"))+
   scale_y_continuous(limits=c(0,1), breaks=seq(0,1, 0.25))+
-  scale_x_discrete("Variable", labels=c(expression("C"[TH]),expression("C"[MH]),expression("C"[MP]), expression("C"[F]), expression("A"[350]), "\u03B2:\u03B1", expression("E"[280]), "HIX", "SR", expression("SUVA"[254]), "FI"))+
+  scale_x_discrete("Variable", labels=c(expression("C"[TH]),expression("C"[MH]),expression("C"[MP]), expression("C"[F]), expression("A"[350]), "\u03B2:\u03B1", "HIX", "SR", expression("SUVA"[254]), "FI"))+
   annotate("text", x=0.8, y=0.96, label= "C.", size=6)+
   borderTheme0.5
 pDOM
-ggsave(filename = "Figures/SynchronyDOMVars.png", plot=pDOM, width =6, height = 3, units= "in", device='png', dpi=320)
+ggsave(filename = "Figures/SynchronyDOMVars.png", plot=pDOM, width =9, height = 3, units= "in", device='png', dpi=320)
 
 dataSub$LUgroup_f<-factor(dataSub$LUgroup, levels=c("allsites", "agDominated", "mixed", "wetDominated"))
 dataSub$varGroup_f<-factor(dataSub$varGroup, levels=c("Physical", "Limnological", "DOM"))

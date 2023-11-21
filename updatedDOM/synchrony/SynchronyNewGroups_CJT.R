@@ -14,7 +14,8 @@ source("synchrony/sFunctions.R") #supporting functions for analysis
 
 ########SETUP SPECIFIC TO DATASET#####
 siteLookup<-read.csv("rawData/SiteNameNum.csv", stringsAsFactors = F)
-data<-read.csv("rawData/ASN_allData.csv", stringsAsFactors = F)#all data
+#data<-read.csv("rawData/ASN_allData.csv", stringsAsFactors = F)#all data
+data<-read.csv("rawData/ASN_AllData_Aug2023.csv", stringsAsFactors = F)#all data
 landUse<-read.csv("Out/landUseGroups.csv", stringsAsFactors = F)#all data
 
 mixed<-as.character(landUse[which(landUse$landUse=="mixed"), 11])
@@ -28,35 +29,22 @@ pcaVars<-c("C1", "C2", "C3", "C4", "C5", "C6", "C7", "A350",
 #make a list of site lists
 siteList<-list(allsites=allsites, wetDominated=wetDominated, 
                mixed=mixed, agDominated=agDominated)
-
-
-#some sites have just site number and some have "ASN" + site number
-#remove ASN in front of site number
-for(i in 1:nrow(data)){
-if(substr(data$Sample.Name[i], 1,3)=="ASN"){
-  data$Sample.Name[i]<-substr(data$Sample.Name[i], 4, nchar(data$Sample.Name[i]))
-} 
-}
-#colnames(data)
-#remove/rename variables
-colnames(data)[5]<-"DOC"
-data$HIX<-NULL
-data$FieldNotes<-NULL
-data$X<-NULL
-data$X.1<-NULL
-data$Time<-NULL
-data$E280_oldmeth<-NULL
-data$Salinity<-NULL
-data$NH4<-NULL
-data$NO3<-NULL
-data$DIC<-NULL
-
-data[which(data$SR > 6),18]<-NA #outlier in SR
-
+data<-data[,1:36]
 data$Cth<-data$C1+data$C2+data$C3#make grouped PARAFAC terrestrial-humic
 data$Cmh<-data$C5+data$C6 
 data$Cmp<-data$C7
 data$Cf<-data$C4
+data$HIX<-NULL
+data$CHL<-NULL
+data$FieldNotes<-NULL
+data$NH4<-NULL
+data$NO3<-NULL
+data$SAL<-NULL
+data$DO.PER<-NULL
+data$PP<-NULL
+data$PN<-NULL
+data$PC<-NULL
+data$DIC<-NULL
 
 mons<-c("01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12")
 monCh<-c("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
@@ -64,20 +52,16 @@ monChab<-c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct"
 vars<-list() #empty list to store data frames for each variable
 for(i in 5:ncol(data)){
   #stream Num, date1, date2, etc. 
-  dfsub<-data [,c(1,2,4,i)] #get one variable at a time
-  dfsub$monYr<-NA 
-      for(x in 1:nrow(dfsub)){ #loop to get dates in new format
-      dfsub$monYr[x]<-paste(mons[which((dfsub$Month[x]==monCh | dfsub$Month[x]==monChab))], dfsub[x,3], sep="-") #combine Date
-      }
+  dfsub<-data[,c(1,3,4,i)] #get one variable at a time
+  dfsub$monYr<-paste(dfsub$MONTH, dfsub$YEAR, sep="-")
   dfsub<-dfsub[,-2:-3] #remove old date columns
-  dfsub[,1]<-as.numeric(dfsub[,1]) #get rid of leading 0's
-  dfsub<-dfsub[-which(is.na(dfsub$Sample.Name)),] #remove NA rows
+  dfsub<-dfsub[-which(is.na(dfsub[,2])),] #remove NA rows
   dfsub[,2]<-as.numeric(dfsub[,2]) 
-  dfsub[is.na(dfsub)] <- -999 #replace NA with -999
+  #dfsub[is.na(dfsub)] <- -999 #replace NA with -999
   #new data.frame for transformed data
-  df<-data.frame(matrix(ncol=(1+length(unique(dfsub$monYr))), nrow=length(unique(dfsub$Sample.Name, na.rm=T))))
+  df<-data.frame(matrix(ncol=(1+length(unique(dfsub$monYr))), nrow=length(unique(dfsub$ASN.SITE.NO, na.rm=T))))
   colnames(df)<-c("Site", unique(dfsub$monYr)) #column names
-  df[,1]<-unique(dfsub$Sample.Name, na.rm=T) #site numbers
+  df[,1]<-unique(dfsub$ASN.SITE.NO, na.rm=T) #site numbers
   #manually convert long to wide
   for(x in 1:nrow(df)){
     for(z in 2:ncol(df)){
@@ -110,11 +94,11 @@ AllFilesSub<-list() #empty list
 # a loop that formats input data for the synchrony analysis
 for(i in 1:length(vars)){   
   DF1<-vars[[i]]
-  if(names(vars)[i]=="SUVA254"){  #division error in May 2006 for SUVA254 and E280
-    DF1$`05-2006`<-NULL
-  } else if(names(vars)[i]=="E280"){
-    DF1$`05-2006`<-NULL
-  }
+  #if(names(vars)[i]=="SUVA254"){  #division error in May 2006 for SUVA254 and E280
+   # DF1$`05-2006`<-NULL
+  #} else if(names(vars)[i]=="E280"){
+  #  DF1$`05-2006`<-NULL
+ # }
   DF1$`10-2004`<-NULL
   DF1$`04-2005`<-NULL
   DF1$`06-2005`<-NULL
@@ -122,10 +106,10 @@ for(i in 1:length(vars)){
   DF1$`08-2005`<-NULL
   DF1$`09-2005`<-NULL 
   DF1$`11-2005`<-NULL
-  #DF1$September_2007<-NULL #check.. many vars not sampled
-  #DF1$November_2007<-NULL #check...redone
-  #DF1$September_2009<-NULL #check
-  #DF1$August_2012<-NULL #only TDN was measured
+  DF1$'9-2007'<-NULL #check.. many vars not sampled
+  DF1$'11-2007'<-NULL #check...redone
+  DF1$'9-2009'<-NULL #check
+  DF1$'8-2012'<-NULL #only TDN was measured
   DF1$`08-2015`<-NULL 
   DF1$`06-2017`<-NULL #many streams not sampled
   DF1$`08-2017`<-NULL #many vars and streams not sampled
@@ -231,6 +215,7 @@ for(z in 1:length(AllFiles)){
     SynchronyResults1[1,2]<-names(subVars[b]) #data name
     SynchronyResults1[1,3]<-results$obs #this is the synchrony value, S
     SynchronyResults1[1,4]<-results$pval #this is the p value
+    SynchronyResults1[1,4]<-results$pval
     SynchronyResults<-rbind(SynchronyResults, SynchronyResults1) #append the data frame for all results
     })
 }#end synchrony loop
@@ -239,7 +224,7 @@ for(z in 1:length(AllFiles)){
 dfOne$value<-as.numeric(dfOne$value) #DOM indices we extracted above
 mydata_wide<-dcast(dfOne, variable+Date~Component) #convert to wide
 colnames(mydata_wide)[4]<-"\u03B2:\u03B1" #rename BA to greek characters for labels
-modelPCA<-prcomp(na.omit(mydata_wide[,3:16]), scale. = F) #run PCA, data is already z-transformed so no scaling
+modelPCA<-prcomp(na.omit(mydata_wide[,3:14]), scale. = F) #run PCA, data is already z-transformed so no scaling
 dfPCA<-summary(modelPCA) 
 
 #ggplot plot theme

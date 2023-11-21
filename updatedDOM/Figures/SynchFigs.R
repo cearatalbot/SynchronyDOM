@@ -7,31 +7,19 @@ setwd("/Users/cearatalbot/RCode/SynchronyDOM/updatedDOM/")
 #read synchrony output
 data<-read.csv(file="Out/SynchronyResults.csv", stringsAsFactors=F)
 
-data$LUgroup<-rep(c("allsites", "wetDominated", "mixed", "agDominated"), times=31) #32 if discharge included
-data$var<-c(rep("DOC", times=4), rep("A350", times=4), rep("BA", times=4),
+data$LUgroup<-rep(c("allsites", "wetDominated", "mixed", "agDominated"), times=27) #32 if discharge included
+data$var<-c(rep("DOC", times=4), rep("A350", times=4), rep("SR", times=4), rep("BA", times=4),
+            rep("FI", times=4),rep("HIX", times=4),
             rep("C1", times=4), rep("C2", times=4), rep("C3", times=4), 
             rep("C4", times=4), rep("C5", times=4), rep("C6", times=4),
-            rep("C7", times=4), rep("E280", times=4), rep("FI", times=4),
-            rep("HIX", times=4), rep("SR", times=4), rep("SUVA254", times=4),
-            rep("CHL", times=4), #rep("DIS", times=4), 
-            rep("DO", times=4),
+            rep("C7", times=4), rep("SUVA254", times=4), rep("DO", times=4),
             rep("pH", times=4), rep("SPC", times=4), rep("SRP", times=4), 
-            rep("TDN", times=4), rep("TDP", times=4),
-            rep("TMP", times=4), rep("TP", times=4), rep("TSS", times=4),
-            rep("Cth", times=4),rep("Cmh", times=4),rep("Cmp", times=4),
-            rep("Cf", times=4), rep("PC1", times=4), rep("PC2", times=4))
-data$varGroup<-c(rep("Limnological", times=4), rep("DOM", times=4), rep("DOM", times=4),
-                 rep("DOM", times=4), rep("DOM", times=4), rep("DOM", times=4), 
-                 rep("DOM", times=4), rep("DOM", times=4), rep("DOM", times=4),
-                 rep("DOM", times=4), rep("DOM", times=4), rep("DOM", times=4),
-                 rep("DOM", times=4), rep("DOM", times=4), rep("DOM", times=4),
-                 rep("Limnological", times=4), #rep("Physical", times=4), 
-                 rep("Limnological", times=4),
-                 rep("Limnological", times=4), rep("Limnological", times=4), rep("Limnological", times=4), 
-                 rep("Limnological", times=4), rep("Limnological", times=4),
-                 rep("Physical", times=4), rep("Limnological", times=4), rep("Limnological", times=4),
-                 rep("DOM", times=4), rep("DOM", times=4), rep("DOM", times=4), rep("DOM", times=4),
-                 rep("DOM", times=4), rep("DOM", times=4))
+            rep("TDP", times=4), rep("TMP", times=4), rep("TP", times=4), rep("TSS", times=4),
+            rep("A254", times=4), rep("Cth", times=4),rep("Cmh", times=4),rep("Cmp", times=4),
+            rep("Cf", times=4))
+data$varGroup<-c(rep("Limnological", times=4), rep("DOM", times=(4*13)), 
+                 rep("Limnological", times=(4*5)), rep("Physical", times=4), 
+                 rep("Limnological", times=(4*2)), rep("DOM", times=(4*5)))
 borderTheme0.5<-theme(panel.grid.major = element_blank(),panel.grid.minor = element_blank(),
                       panel.background = element_rect(colour = "black", size=1, fill=NA), 
                       strip.background = element_blank(), 
@@ -83,7 +71,7 @@ Physical$LUgroup_f<-factor(Physical$LUgroup, levels=c("allsites", "agDominated",
 DOM<-dataSub[dataSub$varGroup=="DOM",]
 DOM$LUgroup_f<-factor(DOM$LUgroup, levels=c("allsites", "agDominated", "mixed", "wetDominated"))
 
-Limno$var_f<-factor(Limno$var, levels=c("DOC", "TDN", "TDP", "TP", "pH", "DO", "TSS", "SPC"))
+Limno$var_f<-factor(Limno$var, levels=unique(Limno$var))
 Lim<-ggplot(data = Limno, aes(x=var_f, y=S, group=LUgroup_f))+
   geom_jitter(size=3, alpha=1, aes(color = LUgroup_f), width=0.2)+
   scale_colour_manual("Land use", values=cols, labels=c("All sites", "Agriculturally dominated", "Mixed", "Wetland dominated"))+
@@ -104,7 +92,7 @@ Phys<-ggplot(data = Physical, aes(x=var, y=S, group=LUgroup_f))+
 Phys  
 ggsave(filename = "Figures/SynchronyPhysVars.png", plot=Phys, width = 4, height = 3, units= "in", device='png', dpi=320)
 
-DOM$var_f<-factor(DOM$var, levels=c("Cth", "Cmh", "Cmp", "Cf", "A350", "BA", "HIX", "SR", "SUVA254", "FI"))
+DOM$var_f<-factor(DOM$var, levels=unique(DOM$var))
 pDOM<-ggplot(data = DOM, aes(x=var_f, y=S, group=LUgroup_f))+
   geom_jitter(size=3, alpha=1, aes(color = LUgroup_f), width=0.2)+
   scale_colour_manual("Land use",values=cols, labels=c("All sites", "Agriculturally dominated", "Mixed", "Wetland dominated"))+
@@ -115,8 +103,8 @@ pDOM<-ggplot(data = DOM, aes(x=var_f, y=S, group=LUgroup_f))+
 pDOM
 ggsave(filename = "Figures/SynchronyDOMVars.png", plot=pDOM, width =9, height = 3, units= "in", device='png', dpi=320)
 
-dataSub$LUgroup_f<-factor(dataSub$LUgroup, levels=c("allsites", "agDominated", "mixed", "wetDominated"))
-dataSub$varGroup_f<-factor(dataSub$varGroup, levels=c("Physical", "Limnological", "DOM"))
+dataSub$LUgroup_f<-factor(dataSub$LUgroup, levels=unique(dataSub$LUgroup))
+dataSub$varGroup_f<-factor(dataSub$varGroup, levels=unique(dataSub$varGroup))
 mypoints<-dataSub[which(dataSub$varGroup_f=="Physical"), ]
 
 pdata<-ggplot(data = dataSub, aes(x=varGroup_f, y=S, fill=LUgroup_f))+
@@ -200,5 +188,72 @@ ont<-ggplot(data=simp_ON)+geom_sf(fill="white", color="grey")+coord_sf(crs=st_cr
   geom_point(data = streams, aes(x = x, y = y, color=LU_f), size=2)+scale_color_manual("Land use", values=mCols,labels=c("Agriculturally dominated", "Mixed", "Wetland dominated"))
 ont
 #ggsave(filename = "Figures/OntarioMap.png", plot=ont, width = 5.5, height = 3, units= "in", device='png', dpi=320)
+
+###line plots of "summer" medians for each group with shaded SD
+#set working directory
+setwd("/Users/cearatalbot/Rcode/SynchronyDOM/updatedDOM/") #file path to folder where you have the data files
+source("synchrony/sFunctions.R") #supporting functions for analysis
+
+########SETUP SPECIFIC TO DATASET#####
+siteLookup<-read.csv("rawData/SiteNameNum.csv", stringsAsFactors = F)
+#data<-read.csv("rawData/ASN_allData.csv", stringsAsFactors = F)#all data
+data<-read.csv("rawData/ASN_AllData_Aug2023.csv", stringsAsFactors = F)#all data
+landUse<-read.csv("Out/landUseGroups.csv", stringsAsFactors = F)#all data
+
+mixed<-as.character(landUse[which(landUse$landUse=="mixed"), 11])
+wetDominated<-as.character(landUse[which(landUse$landUse=="wetDominated"), 11])
+agDominated<-as.character(landUse[which(landUse$landUse=="agDominated"), 11])
+allsites<-as.character(landUse$SiteNum)
+
+#make a list of site lists
+siteList<-list(allsites=allsites, wetDominated=wetDominated, 
+               mixed=mixed, agDominated=agDominated)
+data<-data[,1:36]
+data$Cth<-data$C1+data$C2+data$C3#make grouped PARAFAC terrestrial-humic
+data$Cmh<-data$C5+data$C6 
+data$Cmp<-data$C7
+data$Cf<-data$C4
+data$HIX<-NULL
+data$CHL<-NULL
+data$FieldNotes<-NULL
+data$NH4<-NULL
+data$NO3<-NULL
+data$SAL<-NULL
+data$DO.PER<-NULL
+data$PP<-NULL
+data$PN<-NULL
+data$PC<-NULL
+data$DIC<-NULL
+
+#assign land use groups 
+data$LU_group<-NA #LU group column
+data$ASN.SITE.NO<-as.character(data$ASN.SITE.NO) #convert to character so we can match with groups
+for(x in 2:length(siteList)){ #loop over the land use groups--- skipping all sites
+  for(i in 1:nrow(data)){ #loop over the rows of the data
+    if(length(which(siteList[[x]]==data$ASN.SITE.NO[i])) > 0) #avoids error from no matches 
+    data$LU_group[i]<-names(siteList)[x] #add the land use group name to the correct row
+  } 
+}
+
+data<-data[which(!is.na(data$LU_group)),]#remove the sites that don't belong in any group
+
+ts_data<-cbind(aggregate(data, Cth~LU_group+MONTH+YEAR, FUN=mean), min=aggregate(data, Cth~LU_group+MONTH+YEAR, FUN=sd)[,4])
+ts_data$Time<-1:nrow(ts_data)
+ts_data<-ts_data[which(!is.na(ts_data$min)), ]
+ts_data$TP1<-(ts_data$Cth-ts_data$min)
+ts_data$TP1<-ifelse(ts_data$TP1 < 0, 0, ts_data$TP1)
+
+#coef of variation
+ts_Coef<-cbind(aggregate(data, Cth~LU_group, FUN=mean), sd=aggregate(data, Cth~LU_group, FUN=sd)[,2])
+ts_Coef$cv<-ts_Coef$sd/ts_Coef$Cth*100
+ts<-ggplot(data = ts_data, aes(x=Time, y=Cth, group=LU_group))+geom_line()+
+  geom_ribbon(aes(ymin=TP1, ymax=Cth+min, group=LU_group), alpha=0.4)+
+  facet_grid(rows=vars(LU_group))+
+ # geom_jitter(size=3, alpha=1, aes(color = LUgroup_f), width=0.2)+
+  #scale_colour_manual("Land use",values=cols, labels=c("All sites", "Agriculturally dominated", "Mixed", "Wetland dominated"))+
+    scale_y_continuous(limits=c(0,30), breaks=seq(0,30, 10))
+ # scale_x_discrete("Variable", labels=c(expression("C"[TH]),expression("C"[MH]),expression("C"[MP]), expression("C"[F]), expression("A"[350]), "\u03B2:\u03B1", "HIX", "SR", expression("SUVA"[254]), "FI"))+
+ # annotate("text", x=0.8, y=0.96, label= "C.", size=6)+
+ts
 
 

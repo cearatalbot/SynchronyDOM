@@ -3,9 +3,10 @@
 library(ggplot2)
 library(cowplot)
 library(ggpubr)
-setwd("/Users/cearatalbot/RCode/SynchronyDOM/updatedDOM/")
+library(RColorBrewer)
+setwd("/Users/cearatalbot/Projects/SynchronyDOM/updatedDOM/")
 #read synchrony output
-data<-read.csv(file="Out/SynchronyResults.csv", stringsAsFactors=F)
+data<-read.csv(file="Out/SynchronyResults_2023Nov27.csv", stringsAsFactors=F)
 
 data$LUgroup<-rep(c("allsites", "wetDominated", "mixed", "agDominated"), times=27) #32 if discharge included
 data$var<-c(rep("DOC", times=4), rep("A350", times=4), rep("SR", times=4), rep("BA", times=4),
@@ -63,6 +64,8 @@ dataSub<-data[which(data$pVal < 0.05),] #susbet for significant data only
 #cols<-c("black","#5F0F40", "#E36414", "#0F4C5C") #colors
 #cols<-c("#170A1C",  "#9E0031", "#FFA62B", "#0B7189")
 cols<-c("#6B5671",  "#F0606A", "#F5B266", "#71BCC1")
+brewer.pal(n = 8, name = "YlGn")
+
 #write.csv(dataSub, "Out/significantSynchResults.csv", row.names=F)
 Limno<-dataSub[dataSub$varGroup=="Limnological",]
 Limno$LUgroup_f<-factor(Limno$LUgroup, levels=c("allsites", "agDominated", "mixed", "wetDominated"))
@@ -80,8 +83,15 @@ Lim<-ggplot(data = Limno, aes(x=var_f, y=S, group=LUgroup_f))+
   annotate("text", x=0.7, y=0.96, label= "B.", size=6)+
   borderTheme0.5
 Lim
-ggsave(filename = "Figures/SynchronyLimnoVars.png", plot=Lim, width = 6, height = 3, units= "in", device='png', dpi=320)
+ggsave(filename = "Figures/SynchronyLimnoVars_2023Nov27.png", plot=Lim, width = 6, height = 3, units= "in", device='png', dpi=320)
+lim_tile<-ggplot(Limno, aes(x=LUgroup_f, y=var_f, group=varGroup))+geom_tile(aes(fill=S))+theme_cjt()+
+  scale_fill_distiller(palette = "RdYlBu", type="div",limits=c(0,1), breaks=c(0,0.5, 1.0))+
+  scale_x_discrete("", labels=c("All sites", "Agriculturally \ndominated", "Mixed", "Wetland \ndominated"))+
+  scale_y_discrete("Limnology")
+lim_tile
+ ggsave(filename = "Figures/SynchronyLimnoVars_tile_2023Nov27.png", plot=lim_tile, width = 4, height = 3.5, units= "in", device='png', dpi=320)
 
+Physical$var_f<-factor(Physical$var, levels=unique(Physical$var))
 Phys<-ggplot(data = Physical, aes(x=var, y=S, group=LUgroup_f))+
   geom_jitter(size=3, alpha=1,aes(color = LUgroup_f), width=0.2)+
   scale_colour_manual("Land use",values=cols, labels=c("All sites", "Agriculturally dominated", "Mixed", "Wetland dominated"))+
@@ -90,18 +100,51 @@ Phys<-ggplot(data = Physical, aes(x=var, y=S, group=LUgroup_f))+
   annotate("text", x=0.6, y=0.96, label= "A.", size=6)+
   borderTheme1.5
 Phys  
-ggsave(filename = "Figures/SynchronyPhysVars.png", plot=Phys, width = 4, height = 3, units= "in", device='png', dpi=320)
+ggsave(filename = "Figures/SynchronyPhysVars_2023Nov27.png", plot=Phys, width = 4, height = 3, units= "in", device='png', dpi=320)
+phys_tile<-ggplot(Physical, aes(x=LUgroup_f, y=var, group=varGroup))+geom_tile(aes(fill=S))+theme_cjt()+
+  scale_fill_viridis_c("Synchrony", option="D", begin=0.1, limits=c(0,1), breaks=c(0,0.5, 1.0))+
+  scale_y_discrete("Physical", labels=c("Temp"))+
+  scale_x_discrete("", labels=c("All sites", "Agriculturally \ndominated", "Mixed", "Wetland \ndominated"))
+phys_tile
+ggsave(filename = "Figures/SynchronyPhysVars_tile_2023Nov27.png", plot=phys_tile, width = 4, height = 1.7, units= "in", device='png', dpi=320)
 
 DOM$var_f<-factor(DOM$var, levels=unique(DOM$var))
-pDOM<-ggplot(data = DOM, aes(x=var_f, y=S, group=LUgroup_f))+
+pDOM<-ggplot(data = , aes(x=var_f, y=S, group=LUgroup_f))+
   geom_jitter(size=3, alpha=1, aes(color = LUgroup_f), width=0.2)+
   scale_colour_manual("Land use",values=cols, labels=c("All sites", "Agriculturally dominated", "Mixed", "Wetland dominated"))+
   scale_y_continuous(limits=c(0,1), breaks=seq(0,1, 0.25))+
-  scale_x_discrete("Variable", labels=c(expression("C"[TH]),expression("C"[MH]),expression("C"[MP]), expression("C"[F]), expression("A"[350]), "\u03B2:\u03B1", "HIX", "SR", expression("SUVA"[254]), "FI"))+
+  scale_x_discrete("Variable", labels=c(expression("A"[350]), "SR", "\u03B2:\u03B1", "FI", "HIX", expression("SUVA"[254]), expression( "C"[TH]),expression("C"[MH]),expression("C"[MP]), expression("C"[F])))+
   annotate("text", x=0.8, y=0.96, label= "C.", size=6)+
   borderTheme0.5
 pDOM
-ggsave(filename = "Figures/SynchronyDOMVars.png", plot=pDOM, width =9, height = 3, units= "in", device='png', dpi=320)
+ggsave(filename = "Figures/SynchronyDOMVars_2023Nov27.png", plot=pDOM, width =9, height = 3, units= "in", device='png', dpi=320)
+dom_tile<-ggplot(DOM, aes(x=LUgroup_f, y=var_f, group=varGroup))+geom_tile(aes(fill=S))+theme_cjt()+
+  scale_fill_viridis_c("Synchrony", option="A", begin=0.1, limits=c(0,1), breaks=c(0,0.5, 1.0))+
+  scale_y_discrete("DOM", labels=c(expression("A"[350]), "SR", "\u03B2:\u03B1", "FI", "HIX", expression("SUVA"[254]), expression( "C"[TH]),expression("C"[MH]),expression("C"[MP]), expression("C"[F])))+
+  scale_x_discrete("", labels=c("All sites", "Agriculturally \ndominated", "Mixed", "Wetland \ndominated"))
+dom_tile
+ggsave(filename = "Figures/SynchronyDomVars_tile_2023Nov27.png", plot=dom_tile, width = 4.2, height = 4, units= "in", device='png', dpi=320)
+
+
+ggplot(dataSub, aes(x=LUgroup, y=var, group=varGroup))+geom_tile(aes(fill=S))+theme_cjt()
+
+
+sw<-rbind(Physical, Limno, DOM)
+all_tile<-ggplot(sw, aes(x=LUgroup_f, y=var_f, group=varGroup))+geom_tile(aes(fill=S))+theme_cjt()+
+  scale_fill_viridis_c("Synchrony", option="A", begin=0.1, limits=c(0,1), breaks=c(0,0.5, 1.0))+
+  #scale_y_discrete("DOM", labels=c(expression("A"[350]), "SR", "\u03B2:\u03B1", "FI", "HIX", expression("SUVA"[254]), expression( "C"[TH]),expression("C"[MH]),expression("C"[MP]), expression("C"[F])))+
+  scale_x_discrete("", labels=c("All sites", "Agriculturally \ndominated", "Mixed", "Wetland \ndominated"))+
+  facet_wrap(vars(varGroup))
+all_tile
+
+
+all_tile<-ggplot(sw, aes(x=var_f, y=S, fill=varGroup))+
+  stat_boxplot(geom ='errorbar', width = 0.7)+
+  geom_boxplot(alpha=1, width=0.7, )+
+  theme_cjt()+
+  scale_fill_viridis_d("Synchrony", option="A", begin=0.1)
+  #scale_y_discrete("DOM", labels=c(expression("A"[350]), "SR", "\u03B2:\u03B1", "FI", "HIX", expression("SUVA"[254]), expression( "C"[TH]),expression("C"[MH]),expression("C"[MP]), expression("C"[F])))
+all_tile
 
 dataSub$LUgroup_f<-factor(dataSub$LUgroup, levels=unique(dataSub$LUgroup))
 dataSub$varGroup_f<-factor(dataSub$varGroup, levels=unique(dataSub$varGroup))
@@ -117,7 +160,7 @@ pdata<-ggplot(data = dataSub, aes(x=varGroup_f, y=S, fill=LUgroup_f))+
   geom_point(data=mypoints, position=position_dodge(width=0.7), aes(color=LUgroup_f), size=2)+
   borderTheme0.5Leg
 pdata
-ggsave(filename = "Figures/SynchronyBox.png", plot=pdata, width = 6, height = 3, units= "in", device='png', dpi=320)
+ggsave(filename = "Figures/SynchronyBox_2023Nov27.png", plot=pdata, width = 6, height = 3, units= "in", device='png', dpi=320)
 
 
 plots <- align_plots(pDOM, Lim,align = 'v', axis = 'l')

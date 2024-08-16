@@ -1,8 +1,8 @@
 ####Stream synchrony####
-#Script by CJT, updated Dec 17, 2021 
+#Script by CJT, updated Nov 27, 2023 
 
 #set working directory
-setwd("/Users/cearatalbot/Rcode/SynchronyDOM/updatedDOM/") #file path to folder where you have the data files
+setwd("/Users/cearatalbot/Projects/SynchronyDOM/updatedDOM/") #file path to folder where you have the data files
 
 #load packages
 library(synchrony) #this package contains the synchrony functions
@@ -56,7 +56,7 @@ for(i in 5:ncol(data)){
   dfsub$monYr<-paste(dfsub$MONTH, dfsub$YEAR, sep="-")
   dfsub<-dfsub[,-2:-3] #remove old date columns
   dfsub<-dfsub[-which(is.na(dfsub[,2])),] #remove NA rows
-  dfsub[,2]<-as.numeric(dfsub[,2]) 
+  dfsub[,2]<-ave(as.numeric(dfsub[,2]), dfsub[,1], FUN=scale) ####NEWWWWW
   #dfsub[is.na(dfsub)] <- -999 #replace NA with -999
   #new data.frame for transformed data
   df<-data.frame(matrix(ncol=(1+length(unique(dfsub$monYr))), nrow=length(unique(dfsub$ASN.SITE.NO, na.rm=T))))
@@ -78,10 +78,11 @@ for(i in 5:ncol(data)){
       df[df==-999.00] <- NA  #return to NA
       df<-as.matrix(df[,-1]) #get data without sites
       class(df)<-"numeric" ##back to numeric 
-      df<-ScoreVals(df) #z-score
+      #df<-ScoreVals(df) #z-score
       df<-cbind(dfSite,df) #combine z-scored data with site ID
       colnames(df)<-dates 
       df[is.na(df)] <- -999 #return NA to -999 value
+      
   vars[[i-4]]<-df
   names(vars)[i-4]<-colnames(dfsub)[2]
     }
@@ -127,9 +128,6 @@ for(i in 1:length(vars)){
   DF[1:(ncol(DF)-1)] <- lapply(DF[1:(ncol(DF)-1)], as.numeric) #this will have a warning message, it's okay. It is telling you that the blanks were replaced with "NA"
   DF[1:(ncol(DF)-1)]<-lapply(DF[1:(ncol(DF)-1)], round, digits=3) #round to the number of digits in the original data
   
-  #DF<- DF[,colSums(is.na(DF))<nrow(DF)] #remove streams with no data
-  #DF<-DF[rowSums(is.na(DF)) != (ncol(DF)-1),] #remove dates with no data
-  
   #loop function over all variables and subset for all land cover groups
   for(y in 1:length(siteList)){
     DFsub<-pullSites(df=DF, sites=siteList[[y]]) #get sites for each LU group
@@ -143,8 +141,8 @@ for(i in 1:length(vars)){
 
 ##############synchrony analysis###########
 #empty DF to store results 
-SynchronyResults<-data.frame(matrix(ncol=4,nrow=0)) #make an empty data frame with 4 cols and 0 rows
-colnames(SynchronyResults)<-c("Variable", "Group", "S", "pVal") #rename columns
+SynchronyResults<-data.frame(matrix(ncol=5,nrow=0)) #make an empty data frame with 4 cols and 0 rows
+colnames(SynchronyResults)<-c("Variable", "Group", "S", "pVal", "n") #rename columns
 
 it<-0 #for storing PCA data
 #loop for analysis
@@ -208,14 +206,14 @@ for(z in 1:length(AllFiles)){
     }#end p loop/GET DATA FOR PCA
     df<-na.omit(df)#######
     results<-meancorr(data=df,nrands=999,alternative= "two.tailed",type=1,quiet=TRUE) #do the analysis
-    SynchronyResults1<-data.frame(matrix(ncol=4,nrow=0)) #temporary data frame to store results
+    SynchronyResults1<-data.frame(matrix(ncol=5,nrow=0)) #temporary data frame to store results
 
-    colnames(SynchronyResults1)<-c("Variable", "Group", "S", "pVal") #you'll fill these columns next
+    colnames(SynchronyResults1)<-c("Variable", "Group", "S", "pVal", "n") #you'll fill these columns next
     SynchronyResults1[1,1]<-names(subVars[b]) #data name 
     SynchronyResults1[1,2]<-names(subVars[b]) #data name
     SynchronyResults1[1,3]<-results$obs #this is the synchrony value, S
     SynchronyResults1[1,4]<-results$pval #this is the p value
-    SynchronyResults1[1,4]<-results$pval
+    SynchronyResults1[1,5]<-length(which(!is.na(df)))
     SynchronyResults<-rbind(SynchronyResults, SynchronyResults1) #append the data frame for all results
     })
 }#end synchrony loop
@@ -295,7 +293,11 @@ for(z in 1:length(PCFiles)){
     }
 }
 
-write.csv(SynchronyResults, "Out/synchronyResults.csv", row.names=F)
+write.csv(SynchronyResults, "Out/synchronyResults_2023Nov29.csv", row.names=F)
+
+###with group z scores..
+write.csv(SynchronyResults, "Out/synchronyResults_2024Apr18.csv", row.names=F)
+
 ####Moran's i w/zscored values
 spaceData<-read.csv("rawData/streamLatLon.csv", stringsAsFactors = F)#all data
 spaceVars<-AllFiles

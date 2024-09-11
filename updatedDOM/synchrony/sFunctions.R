@@ -2,12 +2,12 @@
 #By CJT, December 23, 2021
 
 nameToNumber<-function(siteList, lookupTable){ 
+  siteNums<-c()
   for(i in 1:length(siteList)){
-    siteList[i]<-lookupTable[which(lookupTable$Stream==siteList[i]),2]
+    siteNums[i]<-lookupTable[which(lookupTable$Stream==siteList[i]),2]
   }
-  return(siteList)
+  return(siteNums)
 }
-
 
 # A function that subsets data frame into land use groups using matching columns 
 # Usage: pullsites(df, sites), df= data frame to take columns from, sites=a list of sites to match with columns 

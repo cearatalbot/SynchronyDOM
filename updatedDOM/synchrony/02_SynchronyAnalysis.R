@@ -1,21 +1,18 @@
-####Stream synchrony####
-#Script by CJT, updated Nov 27, 2023 
+####Stream synchrony for 45 streams in Southern Ontario, Canada####
+#By CJT, updated Aug 16, 2024
 
 #set working directory
-setwd("/Users/cearatalbot/Projects/SynchronyDOM/updatedDOM/") #file path to folder where you have the data files
+setwd(" ") #file path to folder where you have the data files
 
 #load packages
-library(synchrony) #this package contains the synchrony functions
-library(plyr) #contains match_df function
+library(synchrony) 
+library(plyr) 
 library(reshape2)
-library(ggplot2)
 library(ape)
 source("synchrony/sFunctions.R") #supporting functions for analysis
 
 ########SETUP SPECIFIC TO DATASET#####
-siteLookup<-read.csv("rawData/SiteNameNum.csv", stringsAsFactors = F)
-#data<-read.csv("rawData/ASN_allData.csv", stringsAsFactors = F)#all data
-data<-read.csv("rawData/ASN_AllData_Aug2023.csv", stringsAsFactors = F)#all data
+data<-read.csv("rawData/ASN_AllData_Synchrony.csv", stringsAsFactors = F)#all data
 landUse<-read.csv("Out/landUseGroups.csv", stringsAsFactors = F)#all data
 
 mixed<-as.character(landUse[which(landUse$landUse=="mixed"), 11])
@@ -23,32 +20,13 @@ wetDominated<-as.character(landUse[which(landUse$landUse=="wetDominated"), 11])
 agDominated<-as.character(landUse[which(landUse$landUse=="agDominated"), 11])
 allsites<-as.character(landUse$SiteNum)
 
-#data to be included in PCA
-pcaVars<-c("C1", "C2", "C3", "C4", "C5", "C6", "C7", "A350", 
-           "SR", "HIX.OHNO", "FI", "SUVA254", "E280", "BA")
-#make a list of site lists
 siteList<-list(allsites=allsites, wetDominated=wetDominated, 
                mixed=mixed, agDominated=agDominated)
-data<-data[,1:36]
-data$Cth<-data$C1+data$C2+data$C3#make grouped PARAFAC terrestrial-humic
-data$Cmh<-data$C5+data$C6 
-data$Cmp<-data$C7
-data$Cf<-data$C4
-data$HIX<-NULL
-data$CHL<-NULL
-data$FieldNotes<-NULL
-data$NH4<-NULL
-data$NO3<-NULL
-data$SAL<-NULL
-data$DO.PER<-NULL
-data$PP<-NULL
-data$PN<-NULL
-data$PC<-NULL
-data$DIC<-NULL
 
 mons<-c("01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12")
 monCh<-c("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
 monChab<-c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov")
+
 vars<-list() #empty list to store data frames for each variable
 for(i in 5:ncol(data)){
   #stream Num, date1, date2, etc. 
@@ -56,7 +34,7 @@ for(i in 5:ncol(data)){
   dfsub$monYr<-paste(dfsub$MONTH, dfsub$YEAR, sep="-")
   dfsub<-dfsub[,-2:-3] #remove old date columns
   dfsub<-dfsub[-which(is.na(dfsub[,2])),] #remove NA rows
-  dfsub[,2]<-ave(as.numeric(dfsub[,2]), dfsub[,1], FUN=scale) ####NEWWWWW
+  dfsub[,2]<-ave(as.numeric(dfsub[,2]), dfsub[,1], FUN=scale) #z-score
   #dfsub[is.na(dfsub)] <- -999 #replace NA with -999
   #new data.frame for transformed data
   df<-data.frame(matrix(ncol=(1+length(unique(dfsub$monYr))), nrow=length(unique(dfsub$ASN.SITE.NO, na.rm=T))))
@@ -78,7 +56,7 @@ for(i in 5:ncol(data)){
       df[df==-999.00] <- NA  #return to NA
       df<-as.matrix(df[,-1]) #get data without sites
       class(df)<-"numeric" ##back to numeric 
-      #df<-ScoreVals(df) #z-score
+      df<-ScoreVals(df) #z-score
       df<-cbind(dfSite,df) #combine z-scored data with site ID
       colnames(df)<-dates 
       df[is.na(df)] <- -999 #return NA to -999 value
@@ -95,13 +73,8 @@ AllFilesSub<-list() #empty list
 # a loop that formats input data for the synchrony analysis
 for(i in 1:length(vars)){   
   DF1<-vars[[i]]
-  #if(names(vars)[i]=="SUVA254"){  #division error in May 2006 for SUVA254 and E280
-   # DF1$`05-2006`<-NULL
-  #} else if(names(vars)[i]=="E280"){
-  #  DF1$`05-2006`<-NULL
- # }
-  DF1$`10-2004`<-NULL
-  DF1$`04-2005`<-NULL
+  DF1$`10-2004`<-NULL #these dates have a lot of missing data for various reasons.. and were removed for all streams.
+  DF1$`04-2005`<-NULL 
   DF1$`06-2005`<-NULL
   DF1$`07-2005`<-NULL
   DF1$`08-2005`<-NULL
@@ -119,7 +92,6 @@ for(i in 1:length(vars)){
   
   DF<- as.data.frame(t(DF1)) #transpose to make river names the column names (i.e. long to wide format)
   colnames(DF) <- as.character(unlist(DF[1,])) #use stream column to rename columns
-  #DF <- DF[-1, ] #delete the site number column
   DF$Date<-row.names(DF) #make a new column for the sampling date 
   row.names(DF)<-seq(1, nrow(DF), by=1) #rename rows 
   
@@ -133,7 +105,7 @@ for(i in 1:length(vars)){
     DFsub<-pullSites(df=DF, sites=siteList[[y]]) #get sites for each LU group
     DFsub$Date<-DF$Date
     AllFilesSub[[y]]<-DFsub
-    names(AllFilesSub)[y]<-paste(names(vars[i]), names(siteList[y]), sep="") #change name of data in list to the same name as above
+    names(AllFilesSub)[y]<-paste(names(vars[i]), names(siteList[y]), sep="_") #change name of data in list to the same name as above
     AllFiles[[i]]<-AllFilesSub #append full list with new data
     names(AllFiles)[i]<-paste(names(vars[i])) #rename in appended list
   }
@@ -142,9 +114,8 @@ for(i in 1:length(vars)){
 ##############synchrony analysis###########
 #empty DF to store results 
 SynchronyResults<-data.frame(matrix(ncol=5,nrow=0)) #make an empty data frame with 4 cols and 0 rows
-colnames(SynchronyResults)<-c("Variable", "Group", "S", "pVal", "n") #rename columns
+colnames(SynchronyResults)<-c("Label", "Group", "S", "pVal", "n") #rename columns
 
-it<-0 #for storing PCA data
 #loop for analysis
 for(z in 1:length(AllFiles)){
   subVars<-AllFiles[[z]] #get subsetted data sets for one variable at a time
@@ -154,16 +125,10 @@ for(z in 1:length(AllFiles)){
     df<-df[-1,] #remove row with names
     for(y in 1:nrow(df)){
       df$Date[y]<-paste("01-",df$Date[y], sep="")
-    }
-    df<-df[order(as.Date(df$Date, format="%d-%m-%Y")),]
+    } 
+    df<-df[order(as.Date(df$Date, format="%d-%m-%Y")),] #format date
     df<-as.matrix(df) #get an individual data set 
-    
-    newDF<-as.data.frame(df) ##new data frame for plots later
-    newDF$Group<-names(subVars[b]) ##group label for plots
-    
-    NAME<-paste(names(subVars[b]), "ts", sep="_") ##rename files so I can keep it
-    assign(NAME, newDF) ##
-    
+
     row.names(df)<-df[,ncol(df)]
     df<-df[,-ncol(df)] ##remove date column
     df<-df[,colSums(is.na(df))< nrow(df)] #remove streams with no data
@@ -184,33 +149,13 @@ for(z in 1:length(AllFiles)){
       }
     }
     class(df)<-"numeric"
-
-    ###CODE TO EXTRACT DATA FOR PCA TO KEEP PRE-PROCESSING CONSISTENT
-    for(p in 1:length(pcaVars)){
-      if(names(AllFiles)[z]==pcaVars[p]){
-        if(b==1){
-          it=it+1
-          dfp<-data.frame(df)
-          colnames(dfp)<-colnames(df)
-          dfp$Component<-names(AllFiles)[z]
-          dfp$Date<-unlist(row.names(dfp))
-          dfpLong<-melt(dfp, id.vars = c("Component", "Date"))
-          
-          if(it==1){
-            dfOne<-dfpLong
-          } else{
-            dfOne<-rbind(dfOne, dfpLong)
-          }
-        }
-      } #end if
-    }#end p loop/GET DATA FOR PCA
+    
     df<-na.omit(df)#######
     results<-meancorr(data=df,nrands=999,alternative= "two.tailed",type=1,quiet=TRUE) #do the analysis
     SynchronyResults1<-data.frame(matrix(ncol=5,nrow=0)) #temporary data frame to store results
 
-    colnames(SynchronyResults1)<-c("Variable", "Group", "S", "pVal", "n") #you'll fill these columns next
+    colnames(SynchronyResults1)<-c("Label", "Group", "S", "pVal", "n") #you'll fill these columns next
     SynchronyResults1[1,1]<-names(subVars[b]) #data name 
-    SynchronyResults1[1,2]<-names(subVars[b]) #data name
     SynchronyResults1[1,3]<-results$obs #this is the synchrony value, S
     SynchronyResults1[1,4]<-results$pval #this is the p value
     SynchronyResults1[1,5]<-length(which(!is.na(df)))
@@ -218,87 +163,17 @@ for(z in 1:length(AllFiles)){
     })
 }#end synchrony loop
 
-########PCA##########
-dfOne$value<-as.numeric(dfOne$value) #DOM indices we extracted above
-mydata_wide<-dcast(dfOne, variable+Date~Component) #convert to wide
-colnames(mydata_wide)[4]<-"\u03B2:\u03B1" #rename BA to greek characters for labels
-modelPCA<-prcomp(na.omit(mydata_wide[,3:14]), scale. = F) #run PCA, data is already z-transformed so no scaling
-dfPCA<-summary(modelPCA) 
+###error in cor() will occur when variables do not have enough datapoints for analysis,
+###they will not show up in the results table. There are two instances of this. 
 
-#ggplot plot theme
-borderTheme0.5<-theme(panel.grid.major = element_blank(),panel.grid.minor = element_blank(),
-                      panel.background = element_rect(colour = "black", size=1, fill=NA), 
-                      strip.background = element_blank(), 
-                      panel.spacing = unit(0.3, "lines"), axis.ticks.length = unit(0.2, "lines"), 
-                      text = element_text(size = 14),legend.background=element_blank(), 
-                      legend.key = element_rect(fill = NA), axis.text.x=element_text())
+SynchronyResults$LUgroup<-matrix(unlist(matrix(strsplit(SynchronyResults$Label, split="_"))),ncol=2,byrow=T)[,2]
+SynchronyResults$var<-matrix(unlist(matrix(strsplit(SynchronyResults$Label, split="_"))),ncol=2,byrow=T)[,1]
 
-library(ggfortify)
-#labels don't work
-labspca<-c(expression("A"[350]), "\u03B2:\u03B1", "C1", "C2", "C3", "C4", "C5", "C6", "C7", expression("E"[280]), "FI", "HIX", "SR", expression("SUVA"[254]))
-pcaplot<-autoplot(modelPCA, loadings = TRUE, loadings.label=T, loadings.label.hjust=1, loadings.label.vjust=-0.5, loadings.label.size=3, loadings.label.colour="black", loadings.colour="black",geom="point", colour="grey")+borderTheme0.5
-pcaplot
-#ggsave(filename = "Figures/PCA.png", plot=pcaplot, width = 4, height = 3.5, units= "in", device='png', dpi=320)
+#write.csv(SynchronyResults, "Out/synchronyResults_2024Apr18.csv", row.names=F)
 
-loadings <- modelPCA$rotation #get loadings
-axes <- predict(modelPCA, newdata=mydata_wide[,3:16]) #predict PC1 and PC2 for each stream at each date
-newData<-cbind(mydata_wide, axes[,1:2]) #recombine with other DOM data
- 
-    PC1<-newData[,c(1:2,17)]  #format PC data
-    PC1_wide<-dcast(PC1, Date~variable)
-    PC2<-newData[,c(1:2,18)]
-    PC2_wide<-dcast(PC2, Date~variable)
 
-          pcList<-list() #setup for synchrony analysis
-          pcList[[1]]<-PC1_wide
-          pcList[[2]]<-PC2_wide
-          names(pcList)<-c("PC1", "PC2")
-          PCFilesSub<-list()
-          PCFiles<-list()
-
-#group sites
-for(i in 1:2){
-  DF<-pcList[[i]]
-for(y in 1:length(siteList)){
-  DFsub<-pullSites(df=DF, sites=siteList[[y]]) #get sites for each LU group
-  DFsub$Date<-DF$Date
-  PCFilesSub[[y]]<-DFsub
-  names(PCFilesSub)[y]<-paste(names(pcList)[i], names(siteList)[y], sep="") #change name of data in list to the same name as above
-  PCFiles[[i]]<-PCFilesSub #append full list with new data
-  names(PCFiles)[i]<-paste(names(pcList)[i]) #rename in appended list
-}
-}
-          
-#####run synchrony on list of grouped data#####
-for(z in 1:length(PCFiles)){
-  subVars<-PCFiles[[z]] 
-  for(b in 1:length(subVars)){
-    df<-as.matrix(subVars[[b]]) #get an individual data set 
-    df<-df[,1:(ncol(df)-1)] #remove date column
-    
-    df<-df[,colSums(is.na(df[,1:ncol(df)]))< nrow(df[,1:ncol(df)])] #remove streams with no data
-    df<-df[rowSums(is.na(df[,1:ncol(df)])) != ncol(df[,1:ncol(df)]),] #remove dates with no data
-    #synchrony
-    class(df)<-"numeric"
-    results<-meancorr(data=df,nrands=999,alternative= "two.tailed",type=1,quiet=TRUE) #do the analysis
-    SynchronyResults1<-data.frame(matrix(ncol=4,nrow=0)) #temporary data frame to store results
-    
-    colnames(SynchronyResults1)<-c("Variable", "Group", "S", "pVal") #you'll fill these columns next
-    SynchronyResults1[1,1]<-names(pcList)[z] #data name 
-    SynchronyResults1[1,2]<-names(subVars[b]) #data name
-    SynchronyResults1[1,3]<-results$obs #this is the synchrony value, S
-    SynchronyResults1[1,4]<-results$pval #this is the p value
-    SynchronyResults<-rbind(SynchronyResults, SynchronyResults1) #append the data frame for all results
-    
-    }
-}
-
-write.csv(SynchronyResults, "Out/synchronyResults_2023Nov29.csv", row.names=F)
-
-###with group z scores..
-write.csv(SynchronyResults, "Out/synchronyResults_2024Apr18.csv", row.names=F)
-
-####Moran's i w/zscored values
+##############################
+####Moran's i calculated from z-scored values
 spaceData<-read.csv("rawData/streamLatLon.csv", stringsAsFactors = F)#all data
 spaceVars<-AllFiles
 
@@ -336,23 +211,3 @@ for(z in 1:length(spaceVars)){
 } #end z loop
 
 #write.csv(storeMoran, "Out/moranIResults.csv", row.names=F)
-
-
-####get timeseries
-TS<-newData
-TS$LU<-"NA"
-for(i in 1:length(agDominated)){
-TS$LU[which(TS$variable==agDominated[i])]<-"agDominated"
-}
-for(i in 1:length(wetDominated)){
-TS$LU[which(TS$variable==wetDominated[i])]<-"wetDominated"
-}
-for(i in 1:length(mixed)){
-  TS$LU[which(TS$variable==mixed[i])]<-"mixed"
-}
-
-TSLU<-TS[which(TS$LU!="NA"), ]
-TSLU<-na.omit(TSLU)
-mybox<-ggplot(data=TSLU, aes(x=LU, y=PC1, group=variable, color=LU))+geom_boxplot()
-ggsave(filename = "Figures/PC1Box.png", plot=mybox, width = 5, height = 3, units= "in", device='png', dpi=320)
-

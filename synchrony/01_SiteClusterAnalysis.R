@@ -5,13 +5,11 @@
 library(vegan)
 library(ggplot2)
 library(dendextend)
-library(cowplot)
-library(ggpubr)
 library(ggdendro)
 library(ape)
 
 #wd
-setwd("/Users/cearatalbot/Projects/SynchronyDOM/updatedDOM/")
+setwd("/Users/cearatalbot/RCode/SynchronyDOM/")
 #get supporting functions
 source("synchrony/sFunctions.R") #supporting functions for analysis
 
@@ -40,7 +38,7 @@ row.names(dfSub)<-dfSub$SiteNum
 d<-dist(dfSub[,1:10])
 hc<-hclust(d)
 hcd <- as.dendrogram(hc)
-mycuts<-cutree(hcd, 4)
+mycuts<-cutree(hcd, 4) #from 'dendextend' package
 
 landUse<-c()
 for(i in 1:length(mycuts)){
@@ -91,6 +89,6 @@ p
 #write.csv(dfSub, "Out/landUseGroups.csv", row.names=F)
 
 landuse.ano <- anosim(d, dfSub$landUse)
-summary(landuse.ano) #R2=0.76, P=0.001
+summary(landuse.ano) #R2=0.819, P=0.001
 plot(landuse.ano) 
 
